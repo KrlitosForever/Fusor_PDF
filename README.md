@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![](logo.ico) 
+<img src=logo.ico alt="logo" style= "width:150">
 
 </div>
 
@@ -28,9 +28,5 @@ pyinstaller --windowed --onefile --icon=./logo.ico Fusor.py
 
 Con esto se generará un archivo Fusor.exe en la misma carpeta. Este archivo puede ser compartido y utilizado en cualquier computadora con Windows sin necesidad de tener instalado Python ni ninguna dependencia adicional.
 
-# Si quieres apoyarme con una donación ⬇️
-<div align="center">
-
-  [![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/KrlitosForever) [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/MgtrCarlosCarrasco)
-
-</div>  
+## Si quieres apoyarme con una donación ⬇️
+[![BuyMeACoffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/KrlitosForever) [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/MgtrCarlosCarrasco)
