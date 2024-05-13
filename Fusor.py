@@ -1,117 +1,118 @@
-from PyPDF2 import PdfReader, PdfWriter
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import filedialog, messagebox
+import PyPDF3
 import os
 
-# Configuración de la ventana principal
-frame = tk.Tk()
-frame.title("Fusor PDFs")
-frame.configure(bg='#33A5FF')
-frame.resizable(0, 0)
-
-# Calcula la posición para centrar la ventana
-anchoventana = 400
-altoventana = 300
-x_ventana = frame.winfo_screenwidth() // 2 - anchoventana // 2
-y_ventana = frame.winfo_screenheight() // 2 - altoventana // 2
-posicion = f"{anchoventana}x{altoventana}+{x_ventana}+{y_ventana}"
-frame.geometry(posicion)
-
-# Lista para almacenar las rutas de los archivos PDF seleccionados
-pdfs = []
-
-# Lista auxiliar para mantener el orden de selección
-pdfs_ordered = []
-
-# Función para seleccionar archivos PDF
-def select():
-    global pdfs
-    # Filtra para seleccionar solo archivos PDF
-    tipos_archivo = [('Archivos PDF', '*.pdf')]
-    filenames = filedialog.askopenfilenames(filetypes=tipos_archivo)
-    # Añade cada archivo seleccionado a la lista 'pdfs'
-    for filename in filenames:
-        pdfs.append(filename)
-        pdfs_ordered.append(filename)  # Añadir a la lista auxiliar
-    refresh_text_area()
-
-# Función para eliminar un archivo de la lista pdfs
-def remove_file(index):
-    global pdfs, pdfs_ordered
-    pdfs.pop(index)
-    pdfs_ordered.pop(index)
-    refresh_text_area()
-
-# Función para actualizar el área de texto con los nombres de los archivos seleccionados
-def refresh_text_area():
-    inputtxt.delete(1.0, tk.END)
-    for pdf in pdfs_ordered:
-        inputtxt.insert(tk.END, os.path.basename(pdf) + '\n')
-        remove_button = tk.Button(frame, text="Eliminar", command=lambda pdf=pdf: remove_file(pdfs.index(pdf)))
-        inputtxt.window_create(tk.END, window=remove_button)
-        inputtxt.insert(tk.END, '\n')
-
-# Función para fusionar los archivos PDF seleccionados
-def convertir():
-    try:
-        global pdfs
-        # Crear un objeto PdfWriter para escribir el archivo fusionado
-        writer = PdfWriter()
-
-        # Fusionar cada archivo PDF
-        for pdf in pdfs:
-            # Leer el archivo PDF con PdfReader
-            reader = PdfReader(pdf)
-            # Añadir cada página al objeto writer
-            for page in reader.pages:
-                writer.add_page(page)
-
-        # Abrir un cuadro de diálogo para guardar el archivo PDF fusionado
-        file_name = name_entry.get()
-        if not file_name:
-            file_name = "result"
+class PDFMergerApp:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("PDF Merger")
+        self.master.geometry("400x350")
         
-        # Abrir cuadro de diálogo para elegir la ubicación de guardado
-        save_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("Archivos PDF", "*.pdf")], initialfile=file_name)
+        self.file_list = []
         
-        if save_path:
-            # Guardar el archivo PDF fusionado en la ubicación seleccionada
-            with open(save_path, "wb") as output_file:
-                writer.write(output_file)
+        self.label = tk.Label(master, text="Selecciona los archivos PDF:")
+        self.label.pack()
+        
+        self.listbox = tk.Listbox(master, selectmode=tk.MULTIPLE, height=10, width=50)
+        self.listbox.pack()
+        
+        self.select_button = tk.Button(master, text="Seleccionar archivos", command=self.select_files)
+        self.select_button.pack()
+        
+        self.delete_button = tk.Button(master, text="Eliminar Seleccionados", command=self.delete_selected)
+        self.delete_button.pack()
+        
+        self.move_up_button = tk.Button(master, text="Mover Arriba", command=self.move_up)
+        self.move_up_button.pack()
+        
+        self.move_down_button = tk.Button(master, text="Mover Abajo", command=self.move_down)
+        self.move_down_button.pack()
+        
+        self.merge_button = tk.Button(master, text="Unir PDFs", command=self.merge_pdfs)
+        self.merge_button.pack()
+        
+    def select_files(self):
+        files = filedialog.askopenfilenames(filetypes=[("PDF files", "*.pdf")])
+        for file in files:
+            filename = os.path.basename(file)
+            self.listbox.insert(tk.END, filename)
+        self.file_list.extend(files)
+        print("Archivos seleccionados:", self.file_list)
+        
+    def delete_selected(self):
+        selected_indices = self.listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Advertencia", "Selecciona archivos para eliminar.")
+            return
+        
+        selected_files = [self.file_list[index] for index in selected_indices]
+        for index in selected_indices[::-1]:
+            self.listbox.delete(index)
+            del self.file_list[index]
+        print("Archivos eliminados:", selected_files)
+        
+    def move_up(self):
+        selected_indices = self.listbox.curselection()
+        if not selected_indices or selected_indices[0] == 0:
+            return
+        
+        for index in selected_indices:
+            item = self.listbox.get(index)
+            self.listbox.delete(index)
+            self.listbox.insert(index - 1, item)
+            self.file_list[index], self.file_list[index - 1] = self.file_list[index - 1], self.file_list[index]
+        self.listbox.selection_set(selected_indices[0] - 1)
+        
+    def move_down(self):
+        selected_indices = self.listbox.curselection()
+        if not selected_indices or selected_indices[-1] == self.listbox.size() - 1:
+            return
+        
+        for index in reversed(selected_indices):
+            item = self.listbox.get(index)
+            self.listbox.delete(index)
+            self.listbox.insert(index + 1, item)
+            self.file_list[index], self.file_list[index + 1] = self.file_list[index + 1], self.file_list[index]
+        self.listbox.selection_set(selected_indices[-1] + 1)
+        
+    def merge_pdfs(self):
+        if not self.file_list:
+            print("No hay archivos para unir.")
+            messagebox.showwarning("Advertencia", "No hay archivos para unir.")
+            return
+        
+        output_file = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+        if not output_file:
+            return
+        
+        merger = PyPDF3.PdfFileMerger()
+        for file in self.file_list:
+            try:
+                merger.append(file)
+            except PyPDF3.utils.PdfReadError:
+                print("Error al abrir el archivo:", file)
+        
+        try:
+            merger.write(output_file)
+            print("PDFs unidos con éxito:", output_file)
+            messagebox.showinfo("Éxito", "PDFs unidos con éxito.")
+        except Exception as e:
+            print("Error al guardar el archivo:", e)
+            messagebox.showerror("Error", "Error al guardar el archivo.")
+        
+        merger.close()
+        
+        self.clear_listbox()
+        
+    def clear_listbox(self):
+        self.listbox.delete(0, tk.END)
+        self.file_list.clear()
+        
+def main():
+    root = tk.Tk()
+    app = PDFMergerApp(root)
+    root.mainloop()
 
-            # Mostrar un mensaje de éxito
-            messagebox.showinfo("Éxito", "Unión exitosa")
-        else:
-            # Mostrar un mensaje si el usuario canceló el diálogo
-            messagebox.showinfo("Cancelado", "Proceso de guardado cancelado")
-    except Exception as e:
-        # Mostrar un mensaje de error si ocurre un problema
-        messagebox.showerror("Error", f"Ocurrió un error: {str(e)}")
-
-# Área de texto para mostrar los nombres de los archivos seleccionados
-inputtxt = tk.Text(frame, height=5, width=40)
-inputtxt.pack(pady=10)
-
-# Contenedor para la etiqueta y el campo de entrada
-name_frame = tk.Frame(frame)
-name_frame.pack(pady=10)
-
-# Etiqueta para el campo de entrada
-name_label = tk.Label(name_frame, text="Nombre de archivo:")
-name_label.pack(side="left")
-
-# Campo de entrada para el nombre del archivo
-name_entry = tk.Entry(name_frame, width=40)
-name_entry.pack(side="left")
-name_entry.insert(0, "result")  # Nombre predeterminado
-
-# Botón para seleccionar archivos PDF
-sButton = tk.Button(frame, text="Seleccionar archivos", width=20, height=1, command=select)
-sButton.pack(pady=10)
-
-# Botón para fusionar los archivos seleccionados
-printButton = tk.Button(frame, text="Unir archivos", width=15, height=1, command=convertir)
-printButton.pack(pady=10)
-
-# Inicia el bucle de la interfaz gráfica de usuario
-frame.mainloop()
+if __name__ == "__main__":
+    main()
