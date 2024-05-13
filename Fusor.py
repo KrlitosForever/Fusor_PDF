@@ -20,6 +20,9 @@ frame.geometry(posicion)
 # Lista para almacenar las rutas de los archivos PDF seleccionados
 pdfs = []
 
+# Lista auxiliar para mantener el orden de selección
+pdfs_ordered = []
+
 # Función para seleccionar archivos PDF
 def select():
     global pdfs
@@ -29,9 +32,24 @@ def select():
     # Añade cada archivo seleccionado a la lista 'pdfs'
     for filename in filenames:
         pdfs.append(filename)
-        # Muestra el nombre del archivo en el área de texto
-        file_name = os.path.basename(filename)
-        inputtxt.insert('end', file_name + '\n')
+        pdfs_ordered.append(filename)  # Añadir a la lista auxiliar
+    refresh_text_area()
+
+# Función para eliminar un archivo de la lista pdfs
+def remove_file(index):
+    global pdfs, pdfs_ordered
+    pdfs.pop(index)
+    pdfs_ordered.pop(index)
+    refresh_text_area()
+
+# Función para actualizar el área de texto con los nombres de los archivos seleccionados
+def refresh_text_area():
+    inputtxt.delete(1.0, tk.END)
+    for pdf in pdfs_ordered:
+        inputtxt.insert(tk.END, os.path.basename(pdf) + '\n')
+        remove_button = tk.Button(frame, text="Eliminar", command=lambda pdf=pdf: remove_file(pdfs.index(pdf)))
+        inputtxt.window_create(tk.END, window=remove_button)
+        inputtxt.insert(tk.END, '\n')
 
 # Función para fusionar los archivos PDF seleccionados
 def convertir():
